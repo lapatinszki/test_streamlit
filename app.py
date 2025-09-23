@@ -16,11 +16,13 @@ sender_name = "IDM Systems Zrt."
 sender_email = "idm@idm-systems.hu"
 receiver_email = "lapatinszki18@gmail.com"
 subject = "Streamlit Mailtrap teszt"
-body = "Ez egy teszt üzenet Mailtrap SMTP-vel."
 
 # Session state inicializálás a gombnyomás kezeléséhez
 if "email_sent" not in st.session_state:
     st.session_state.email_sent = False
+
+# Szövegbeviteli mező
+body = st.text_area("Írd be az email szövegét:", value="Ez egy teszt üzenet Mailtrap SMTP-vel.")
 
 def send_email():
     message = MIMEMultipart()
