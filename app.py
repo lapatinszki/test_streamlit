@@ -1,65 +1,33 @@
 import streamlit as st
-import requests
-from msal import ConfidentialClientApplication
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
-st.set_page_config(page_title="Céges e-mail küldés", layout="centered")
+# Secrets betöltése
+smtp_server = st.secrets["email"]["smtp_server"]
+smtp_port = st.secrets["email"]["smtp_port"]
+smtp_username = st.secrets["email"]["smtp_username"]
+smtp_password = st.secrets["email"]["smtp_password"]
+smtp_helo = st.secrets["email"]["smtp_helo"]
 
-st.title("📧 Céges e-mail küldés Microsoft Graph API-val")
+# Email felépítése
+sender_email = "lapatinszki18@gmail.com"
+receiver_email = "lapatinszki18@gmail.com"  # ide küldöd a teszt emailt
+subject = "Streamlit Mailtrap teszt"
+body = "Ez egy teszt üzenet Mailtrap SMTP-vel."
 
-# --- Titkok betöltése (Streamlit Cloud Secrets) ---
-client_id = st.secrets["azure"]["client_id"]
-tenant_id = st.secrets["azure"]["tenant_id"]
-client_secret = st.secrets["azure"]["client_secret"]
-my_email = st.secrets["azure"]["my_email"]
+message = MIMEMultipart()
+message["From"] = sender_email
+message["To"] = receiver_email
+message["Subject"] = subject
+message.attach(MIMEText(body, "plain"))
 
-authority = f"https://login.microsoftonline.com/{tenant_id}"
-scopes = ["https://graph.microsoft.com/.default"]
-
-# --- Token szerzés ---
-app = ConfidentialClientApplication(
-    client_id=client_id,
-    client_credential=client_secret,
-    authority=authority
-)
-
-result = app.acquire_token_for_client(scopes=scopes)
-
-if "access_token" not in result:
-    st.error(f"❌ Token hiba: {result}")
-    st.stop()
-
-token = result["access_token"]
-
-# --- Űrlap a levélhez ---
-st.subheader("Új e-mail létrehozása")
-to_address = st.text_input("Címzett e-mail címe", value=my_email)
-subject = st.text_input("Tárgy", value="Teszt üzenet a Streamlitből")
-body = st.text_area("Üzenet szövege", value="Ez egy teszt e-mail, amit a Microsoft Graph API küldött ki.")
-
-if st.button("✉️ E-mail küldése"):
-    email_msg = {
-        "message": {
-            "subject": subject,
-            "body": {
-                "contentType": "Text",
-                "content": body
-            },
-            "toRecipients": [
-                {"emailAddress": {"address": to_address}}
-            ]
-        }
-    }
-
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    url = f"https://graph.microsoft.com/v1.0/users/{my_email}/sendMail"
-    r = requests.post(url, headers=headers, json=email_msg)
-
-    if r.status_code == 202:
-        st.success(f"✅ E-mail elküldve {to_address} címre!")
-    else:
-        st.error(f"❌ Hiba a küldésnél: {r.status_code} {r.text}")
-
+try:
+    with smtplib.SMTP(smtp_server, smtp_port) as server:
+        server.ehlo(smtp_helo)
+        server.starttls()  # mert a Mailtrap port 587 STARTTLS-t használ
+        server.login(smtp_username, smtp_password)
+        server.sendmail(sender_email, receiver_email, message.as_string())
+        st.success("Email sikeresen elküldve!")
+except Exception as e:
+    st.error(f"Hiba történt: {e}")
