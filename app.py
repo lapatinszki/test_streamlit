@@ -12,7 +12,7 @@ smtp_password = st.secrets["email"]["smtp_password"]
 smtp_helo = st.secrets["email"]["smtp_helo"]
 
 # Email felépítése
-sender_name = "IDM Systems"
+sender_name = "IDM Systems Zrt."
 sender_email = "idm@idm-systems.hu"
 receiver_email = "lapatinszki18@gmail.com"  # ide küldöd a teszt emailt
 subject = "Streamlit Mailtrap teszt"
