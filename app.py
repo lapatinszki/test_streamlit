@@ -2,6 +2,7 @@ import streamlit as st
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import formataddr
 
 # Secrets betöltése
 smtp_server = st.secrets["email"]["smtp_server"]
@@ -11,13 +12,14 @@ smtp_password = st.secrets["email"]["smtp_password"]
 smtp_helo = st.secrets["email"]["smtp_helo"]
 
 # Email felépítése
+sender_name = "IDM Systems"
 sender_email = "idm@idm-systems.hu"
 receiver_email = "lapatinszki18@gmail.com"  # ide küldöd a teszt emailt
 subject = "Streamlit Mailtrap teszt"
 body = "Ez egy teszt üzenet Mailtrap SMTP-vel."
 
 message = MIMEMultipart()
-message["From"] = sender_email
+message["From"] = formataddr((sender_name, sender_email))
 message["To"] = receiver_email
 message["Subject"] = subject
 message.attach(MIMEText(body, "plain"))
