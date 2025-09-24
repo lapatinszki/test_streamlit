@@ -1,50 +1,28 @@
 import streamlit as st
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.utils import formataddr
+from msal import ConfidentialClientApplication
+import requests
 
-# Secrets betöltése
-smtp_server = st.secrets["email"]["smtp_server"]
-smtp_port = st.secrets["email"]["smtp_port"]
-smtp_username = st.secrets["email"]["smtp_username"]
-smtp_password = st.secrets["email"]["smtp_password"]
-smtp_helo = st.secrets["email"]["smtp_helo"]
+client_id = st.secrets["azure"]["client_id"]
+tenant_id = st.secrets["azure"]["tenant_id"]
+client_secret = st.secrets["azure"]["client_secret"]
+my_email = st.secrets["azure"]["my_email"]
 
-# Email adatok
-sender_name = "IDM Systems Zrt."
-sender_email = "idm@idm-systems.hu"
-receiver_email = "lapatinszki18@gmail.com"
-subject = "Streamlit Mailtrap teszt"
+authority = f"https://login.microsoftonline.com/{tenant_id}"
+scopes = ["https://graph.microsoft.com/.default"]
 
-# Session state inicializálás a gombnyomás kezeléséhez
-if "email_sent" not in st.session_state:
-    st.session_state.email_sent = False
+app = ConfidentialClientApplication(
+    client_id=client_id,
+    client_credential=client_secret,
+    authority=authority
+)
 
-# Szövegbeviteli mező
-body = st.text_area("Írd be az email szövegét:", value="Ez egy teszt üzenet Mailtrap SMTP-vel.")
-
-def send_email():
-    message = MIMEMultipart()
-    message["From"] = formataddr((sender_name, sender_email))
-    message["To"] = receiver_email
-    message["Subject"] = subject
-    message.attach(MIMEText(body, "plain"))
-
-    try:
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.ehlo(smtp_helo)
-            server.starttls()  # STARTTLS a Mailtrap port 587-hez
-            server.login(smtp_username, smtp_password)
-            server.sendmail(sender_email, receiver_email, message.as_string())
-        st.success("Email sikeresen elküldve!")
-        st.session_state.email_sent = True
-    except Exception as e:
-        st.error(f"Hiba történt: {e}")
-
-# Gomb megjelenítése
-if st.button("Email küldése"):
-    if not st.session_state.email_sent:
-        send_email()
-    else:
-        st.info("Az email már elküldve.")
+result = app.acquire_token_for_client(scopes=scopes)
+if "access_token" not in result:
+    st.error(f"Token hiba: {result}")
+else:
+    token = result["access_token"]
+    # példa: üzenet küldése a saját mailboxra
+    email_msg = { ... }  # lásd korábbi példák
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    r = requests.post(f"https://graph.microsoft.com/v1.0/users/{my_email}/sendMail",
+                      headers=headers, json=email_msg)
